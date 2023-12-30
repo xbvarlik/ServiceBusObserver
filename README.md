@@ -1,6 +1,8 @@
 # Service Bus Observer
 
 This is a testing package for Azure Service Bus with an observer pattern.
+It is advised that you use same message type for both publisher and subscriber and deserialize it in the handler.
+It does not have to be any specific type, but it must be the same in both ends.
 
 Requires .NET 8.0 or higher.
 
@@ -89,16 +91,17 @@ public class YourMessageHandler : MessageHandler
 {
     public override string QueueName { get; set; }
 
-    public LogMessageHandler() : base()
+    public YourMessageHandler() : base()
     {
         
     }
-    public LogMessageHandler() : base(ServiceBusConstants.DemoQueue)
+    public YourMessageHandler(/*Your dependencies*/) : base(ServiceBusConstants.DemoQueue)
     {
     }
 
     public override Task HandleMessageAsync(ServiceBusReceivedMessage message)
     {
+        var deserializedMessage = DeserializeMessage<YourType>(message);
         // your logic here - what to do with the message        
         return Task.CompletedTask;
     }
