@@ -1,4 +1,5 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using System.Text.Json;
+using Azure.Messaging.ServiceBus;
 
 namespace Ntt.ServiceBusObserver.Consumer;
 
@@ -22,4 +23,10 @@ public abstract class MessageHandler : IMessageHandler
     
     public virtual string QueueName { get; set; } = null!;
     public abstract Task HandleMessageAsync(ServiceBusReceivedMessage message);
+    
+    protected virtual T? DeserializeMessage<T>(ServiceBusReceivedMessage message)
+    {
+        var messageBody = message.Body.ToString();
+        return JsonSerializer.Deserialize<T>(messageBody);
+    }
 }
