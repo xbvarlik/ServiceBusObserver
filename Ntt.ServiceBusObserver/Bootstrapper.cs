@@ -30,7 +30,7 @@ public static class Bootstrapper
     public static QueueHandlerRegistry AddMessageHandler<TMessageHandler>(this QueueHandlerRegistry registry, IServiceProvider services)
     where TMessageHandler : IMessageHandler, new()
     {
-        var messageHandler = ActivatorUtilities.CreateInstance<TMessageHandler>(services);
+        var messageHandler = services.GetRequiredService<TMessageHandler>();
         registry.RegisterHandler(messageHandler.QueueName, messageHandler);
         return registry;
     }
