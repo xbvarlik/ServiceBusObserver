@@ -90,17 +90,21 @@ public class YourController(TriggerSubject triggerSubject /*, any other service 
 public class YourMessageHandler : MessageHandler
 {
     public override string QueueName { get; set; }
+    public override IServiceScopeFactory ScopeFactory { get; set; }
 
     public YourMessageHandler() : base()
     {
         
     }
-    public YourMessageHandler(/*Your dependencies*/) : base(ServiceBusConstants.DemoQueue)
+    public YourMessageHandler(IServiceScopeFactory scopeFactory) : base(scopeFactory, ServiceBusConstants.DemoQueue)
     {
     }
 
     public override Task HandleMessageAsync(ServiceBusReceivedMessage message)
     {
+        // you can use the below line to get any service you need
+        var service = ServiceBundleUtility.GetService<YourService>(ScopeFactory);
+        
         var deserializedMessage = DeserializeMessage<YourType>(message);
         // your logic here - what to do with the message        
         return Task.CompletedTask;

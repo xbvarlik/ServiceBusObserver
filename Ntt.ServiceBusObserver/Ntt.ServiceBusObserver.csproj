@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>Ntt.ServiceBusObserver</PackageId>
-        <Version>0.0.3</Version>
+        <Version>0.0.5</Version>
         <Authors>xbvarlik</Authors>
         <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
         <PackageReadmeFile>README.md</PackageReadmeFile>

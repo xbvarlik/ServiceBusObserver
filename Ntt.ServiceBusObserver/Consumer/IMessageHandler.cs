@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Ntt.ServiceBusObserver.Consumer;
 
@@ -11,17 +12,20 @@ public interface IMessageHandler
 
 public abstract class MessageHandler : IMessageHandler
 {
-    protected MessageHandler()
+    public virtual string QueueName { get; set; }
+    public virtual IServiceScopeFactory? ScopeFactory { get; set; }
+    
+    public MessageHandler()
     {
         
     }
 
-    protected MessageHandler(string queueName)
+    public MessageHandler(IServiceScopeFactory scopeFactory, string queueName)
     {
         QueueName = queueName;
+        ScopeFactory = scopeFactory;
     }
-    
-    public virtual string QueueName { get; set; } = null!;
+
     public abstract Task HandleMessageAsync(ServiceBusReceivedMessage message);
     
     protected virtual T? DeserializeMessage<T>(ServiceBusReceivedMessage message)

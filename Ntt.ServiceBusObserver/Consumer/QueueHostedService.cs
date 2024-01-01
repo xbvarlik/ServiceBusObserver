@@ -1,5 +1,8 @@
-﻿using Azure.Messaging.ServiceBus;
+﻿using System.Diagnostics.CodeAnalysis;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Ntt.ServiceBusObserver.Utils;
 
 namespace Ntt.ServiceBusObserver.Consumer;
 
@@ -13,45 +16,53 @@ public class QueueReceiverHostedService(ServiceBusOptions options, QueueHandlerR
         while (!stoppingToken.IsCancellationRequested)
         {
             await ExecuteMessageQueues(stoppingToken);
-            
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
     }
-
+    
     private async Task ExecuteMessageQueues(CancellationToken stoppingToken)
     {
         if (_queueNames == null || !_queueNames.Any())
-            await StopAsync(stoppingToken);
+            return;
         
         var receiver = new QueueMessageReceiver(_client);
-        
-        foreach (var queueName in _queueNames!)
+
+        var tasks = _queueNames.Select(async queueName =>
         {
             var handler = handlerRegistry.GetHandler(queueName);
-            await receiver.ReceiveMessagesFromQueueAsync(queueName, handler.HandleMessageAsync, stoppingToken);
-        }
+            await receiver.ReceiveMessageBatchFromQueue(queueName, handler.HandleMessageAsync, stoppingToken);
+        });
+
+        await Task.WhenAll(tasks);
     }
 }
 
 internal class QueueMessageReceiver(ServiceBusClient client)
 {
-    public async Task ReceiveMessagesFromQueueAsync(string queueName, Func<ServiceBusReceivedMessage, Task> messageHandler, CancellationToken cancellationToken)
+    [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
+    public async Task ReceiveMessageBatchFromQueue(string queueName,
+        Func<ServiceBusReceivedMessage, Task> messageHandler,
+        CancellationToken cancellationToken = default)
     {
         var receiver = client.CreateReceiver(queueName);
-        var message = await receiver.ReceiveMessageAsync(cancellationToken: cancellationToken);
-
-        if (message == null) 
+        var messages = await receiver.ReceiveMessagesAsync(1000, cancellationToken: cancellationToken);
+        
+        if (!messages.Any()) 
             return;
-            
-        try
+        
+        var logger = LocalLogger.CreateLogger<QueueMessageReceiver>();
+
+        foreach (var message in messages)
         {
-            await messageHandler(message);
-            await receiver.CompleteMessageAsync(message, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            await receiver.AbandonMessageAsync(message, null, cancellationToken);
-            throw new Exception($"Error occurred while processing message: {message.Body}", ex);
+            try
+            {
+                await messageHandler(message);
+                await receiver.CompleteMessageAsync(message, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                await receiver.AbandonMessageAsync(message, null, cancellationToken);
+                logger.LogError(ex.Message);
+            }
         }
     }
 }
