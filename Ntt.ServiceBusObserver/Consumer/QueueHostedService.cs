@@ -25,11 +25,20 @@ public class QueueReceiverHostedService(ServiceBusOptions options, QueueHandlerR
             return;
         
         var receiver = new QueueMessageReceiver(_client);
-
+        var logger = LocalLogger.CreateLogger<QueueReceiverHostedService>();
+        
         var tasks = _queueNames.Select(async queueName =>
         {
-            var handler = handlerRegistry.GetHandler(queueName);
-            await receiver.ReceiveMessageBatchFromQueue(queueName, handler.HandleMessageAsync, stoppingToken);
+            try
+            {
+                var handler = handlerRegistry.GetHandler(queueName);
+                await receiver.ReceiveMessageBatchFromQueue(queueName, handler.HandleMessageAsync, stoppingToken);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                logger.LogError(e.Message);
+            }
         });
 
         await Task.WhenAll(tasks);

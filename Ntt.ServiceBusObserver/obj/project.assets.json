@@ -688,7 +688,7 @@
     "C:\\Users\\10131551\\.nuget\\packages\\": {}
   },
   "project": {
-    "version": "0.0.4",
+    "version": "0.0.5",
     "restore": {
       "projectUniqueName": "C:\\Users\\10131551\\RiderProjects\\ServiceBusObserver\\Ntt.ServiceBusObserver\\Ntt.ServiceBusObserver.csproj",
       "projectName": "Ntt.ServiceBusObserver",
